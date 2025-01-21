@@ -1,19 +1,26 @@
 using UnityEngine;
+using UnityEngine.UI;
+using Photon.Pun;
 
-public class ScoreSystem : MonoBehaviour
+public class ScoreSystem : MonoBehaviourPun
 {
     public float maxTime = 150f; // 2.5 minutes in seconds
-    private float score;
+    public Text Score;
+    public GameObject Score_Panel;
+    public GameObject Timer_Panel;
 
-/*    private void Start()
+    public void CalculateScore(float completionTime)
     {
-        Debug.Log(CalculateScore(10));
-    }*/
+        int score = (int)(Mathf.Clamp01(completionTime / maxTime) * 100);
+        photonView.RPC("UpdateScore", RpcTarget.All, score);
+    }
 
-    public float CalculateScore(float completionTime)
+    [PunRPC]
+    private void UpdateScore(int score)
     {
-        int score = (int)(Mathf.Clamp01((completionTime) / (maxTime)) * 100);
-        Debug.Log(score);
-        return score;
+        Debug.Log("Score Updated: " + score);
+        Score_Panel.SetActive(true);
+        Timer_Panel.SetActive(true);
+        Score.text = "Score: " + score.ToString();
     }
 }
