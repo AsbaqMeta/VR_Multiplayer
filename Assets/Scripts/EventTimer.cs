@@ -6,8 +6,8 @@ using Photon.Pun;
 
 public class EventTimer : MonoBehaviourPun
 {
-    public float timerDuration = 5.0f;
-    private float currentTime;
+    public float timerDuration = 150f;
+    public float currentTime;
     private bool isRunning = false;
     public Text Timer_1;
     public Text Timer_2;
@@ -17,6 +17,7 @@ public class EventTimer : MonoBehaviourPun
         if (!isRunning)
         {
             isRunning = true;
+           // StartTimerRPC();
             photonView.RPC("StartTimerRPC", RpcTarget.All);
         }
     }

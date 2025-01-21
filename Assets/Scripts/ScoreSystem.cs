@@ -8,9 +8,11 @@ public class ScoreSystem : MonoBehaviourPun
     public Text Score;
     public GameObject Score_Panel;
     public GameObject Timer_Panel;
+    public EventTimer eventTimer;
 
-    public void CalculateScore(float completionTime)
+    public void CalculateScore()
     {
+        float completionTime = eventTimer.currentTime;
         int score = (int)(Mathf.Clamp01(completionTime / maxTime) * 100);
         photonView.RPC("UpdateScore", RpcTarget.All, score);
     }

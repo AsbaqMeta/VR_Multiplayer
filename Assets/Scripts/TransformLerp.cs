@@ -4,11 +4,12 @@ using Photon.Pun;
 
 public class TransformLerp : MonoBehaviourPun
 {
-    public Transform target;
     public Transform initial;
+    public Transform target;
     public float duration = 1.0f;
+    public EventTimer eventTimer;
 
-    private void Start()
+    private void RPCMoveToTarget()
     {
         if (PhotonNetwork.IsMasterClient)
         {
@@ -19,13 +20,25 @@ public class TransformLerp : MonoBehaviourPun
     public void MoveToTarget()
     {
         if (PhotonNetwork.IsMasterClient)
+        {
             photonView.RPC("LerpToTarget", RpcTarget.All, target.position, target.rotation, target.localScale);
+            Debug.Log("MoveToTarget");
+            if (eventTimer != null)
+            {
+                eventTimer.StartTimer();
+            }
+        }
+        
+       /* LerpToInitial(target.position, target.rotation, target.localScale);*/
     }
 
     public void MoveToInitial()
     {
-        if (PhotonNetwork.IsMasterClient)
-            photonView.RPC("LerpToInitial", RpcTarget.All, initial.position, initial.rotation, initial.localScale);
+        /*        if (PhotonNetwork.IsMasterClient)
+                    photonView.RPC("LerpToInitial", RpcTarget.All, initial.position, initial.rotation, initial.localScale);*/
+        Debug.Log("MoveToInitail");
+        LerpToInitial(initial.position, initial.rotation, initial.localScale);
+
     }
 
     [PunRPC]
