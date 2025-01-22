@@ -16,8 +16,9 @@ public class EventTimer : MonoBehaviourPun
     {
         if (!isRunning)
         {
+            if (photonView == null)
+                Debug.LogError("PhotonView is missing on " + gameObject.name);
             isRunning = true;
-           // StartTimerRPC();
             photonView.RPC("StartTimerRPC", RpcTarget.All);
         }
     }
@@ -30,13 +31,16 @@ public class EventTimer : MonoBehaviourPun
 
     private IEnumerator TimerCoroutine()
     {
-        for (currentTime = timerDuration; currentTime > 0; currentTime--)
+        while (isRunning)
         {
-            Timer_1.text = "Timer: " + currentTime.ToString();
-            Timer_2.text = "Timer: " + currentTime.ToString();
-            yield return new WaitForSeconds(1f);
+            for (currentTime = timerDuration; currentTime > 0; currentTime--)
+            {
+                Timer_1.text = "Timer: " + currentTime.ToString();
+                Timer_2.text = "Timer: " + currentTime.ToString();
+                yield return new WaitForSeconds(1f);
+            }
+            isRunning = false;
+            Debug.Log("Timer ended!");
         }
-        isRunning = false;
-        Debug.Log("Timer ended!");
     }
 }

@@ -45,7 +45,7 @@ public class MultiplayerManager : MonoBehaviourPunCallbacks
         DefaultRoom roomSetting = defaultRooms[defaultRoomIndex];
 
         //LOAD SCENE
-        PhotonNetwork.LoadLevel(roomSetting.sceneIndex);
+        PhotonNetwork.LoadLevel(1);
 
         //CREATE THE ROOM
         RoomOptions roomOptions = new RoomOptions();
@@ -53,7 +53,8 @@ public class MultiplayerManager : MonoBehaviourPunCallbacks
         roomOptions.IsVisible = true;
         roomOptions.IsOpen = true;
 
-        PhotonNetwork.JoinOrCreateRoom("Room 1", roomOptions, TypedLobby.Default);
+        PhotonNetwork.JoinOrCreateRoom(roomSetting.Name, roomOptions, TypedLobby.Default);
+        Debug.Log("Joined a Room");
     }
 
     public override void OnJoinedRoom()

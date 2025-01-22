@@ -1,18 +1,3 @@
-/*
- * NetworkPlayer - Multiplayer VR Player Synchronization
- * 
- * This script synchronizes the player's head and hand movements across the network using Photon PUN.
- * It supports VR tracking and animation syncing for other players to see the correct movements.
- * 
- * Key Features:
- * - Tracks and updates the player's head and hands in a networked VR environment.
- * - Hides the local player's body to prevent self-view obstruction.
- * - Synchronizes position and rotation using `OnPhotonSerializeView` for smooth multiplayer experience.
- * - Uses Unity's XR Interaction Toolkit for VR input handling.
- * 
- * Author: [Your Name]
- */
-
 using UnityEngine;
 using UnityEngine.XR;
 using Photon.Pun;
@@ -33,17 +18,29 @@ public class NetworkPlayer : MonoBehaviourPun, IPunObservable
     private Transform LeftHandRig;
     private Transform RightHandRig;
 
-    // Start is called before the first frame update
-    [System.Obsolete]
+    private Vector3 headPosition;
+    private Quaternion headRotation;
+    private Vector3 leftHandPosition;
+    private Quaternion leftHandRotation;
+    private Vector3 rightHandPosition;
+    private Quaternion rightHandRotation;
+
+    public float smoothTime = 0.1f; // Interpolation factor
+    private Vector3 headOffset; // Stores initial head offset
+
     void Start()
     {
         photonView = GetComponent<PhotonView>();
         XROrigin rig = FindObjectOfType<XROrigin>();
+
         HeadRig = rig.transform.Find("Camera Offset/Main Camera");
         LeftHandRig = rig.transform.Find("Camera Offset/Left Controller");
         RightHandRig = rig.transform.Find("Camera Offset/Right Controller");
 
-        // Hide local player's body (Prevent self-view)
+        // Store initial offset (fixes head sinking issue)
+        headOffset = Head.position - HeadRig.position;
+
+        // Hide local player’s model to prevent self-view
         if (photonView.IsMine)
         {
             foreach (var item in GetComponentsInChildren<Renderer>())
@@ -53,23 +50,37 @@ public class NetworkPlayer : MonoBehaviourPun, IPunObservable
         }
     }
 
-    // Update is called once per frame
     void Update()
     {
         if (photonView.IsMine)
         {
-            MapPosition(Head, HeadRig);
+            // Sync local movement
+            MapPosition(Head, HeadRig, headOffset);
             MapPosition(LeftHand, LeftHandRig);
             MapPosition(RightHand, RightHandRig);
 
+            // Sync hand animations
             UpdateHandAnimation(InputDevices.GetDeviceAtXRNode(XRNode.LeftHand), LeftHandAnimator);
             UpdateHandAnimation(InputDevices.GetDeviceAtXRNode(XRNode.RightHand), RightHandAnimator);
         }
+        else
+        {
+            // Interpolate movement for other players
+            Head.position = Vector3.Lerp(Head.position, headPosition, smoothTime);
+            Head.rotation = Quaternion.Slerp(Head.rotation, headRotation, smoothTime);
+
+            LeftHand.position = Vector3.Lerp(LeftHand.position, leftHandPosition, smoothTime);
+            LeftHand.rotation = Quaternion.Slerp(LeftHand.rotation, leftHandRotation, smoothTime);
+
+            RightHand.position = Vector3.Lerp(RightHand.position, rightHandPosition, smoothTime);
+            RightHand.rotation = Quaternion.Slerp(RightHand.rotation, rightHandRotation, smoothTime);
+        }
     }
 
-    // Updates hand animation values based on VR controller input
     void UpdateHandAnimation(InputDevice targetDevice, Animator handAnimator)
     {
+        if (handAnimator == null) return;
+
         if (targetDevice.TryGetFeatureValue(CommonUsages.trigger, out float triggerValue))
         {
             handAnimator.SetFloat("Trigger", triggerValue);
@@ -89,17 +100,15 @@ public class NetworkPlayer : MonoBehaviourPun, IPunObservable
         }
     }
 
-    // Maps the tracked VR rig positions to the network player
-    void MapPosition(Transform target, Transform rigTransform)
+    void MapPosition(Transform target, Transform rigTransform, Vector3 offset = default)
     {
-        target.position = rigTransform.position;
+        target.position = rigTransform.position + offset;
         target.rotation = rigTransform.rotation;
     }
 
-    // Photon Synchronization - Send & Receive Position Data
     public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
     {
-        if (stream.IsWriting) // Send data to others
+        if (stream.IsWriting) // Sending data
         {
             stream.SendNext(Head.position);
             stream.SendNext(Head.rotation);
@@ -108,14 +117,14 @@ public class NetworkPlayer : MonoBehaviourPun, IPunObservable
             stream.SendNext(RightHand.position);
             stream.SendNext(RightHand.rotation);
         }
-        else // Receive data from other players
+        else // Receiving data
         {
-            Head.position = (Vector3)stream.ReceiveNext();
-            Head.rotation = (Quaternion)stream.ReceiveNext();
-            LeftHand.position = (Vector3)stream.ReceiveNext();
-            LeftHand.rotation = (Quaternion)stream.ReceiveNext();
-            RightHand.position = (Vector3)stream.ReceiveNext();
-            RightHand.rotation = (Quaternion)stream.ReceiveNext();
+            headPosition = (Vector3)stream.ReceiveNext();
+            headRotation = (Quaternion)stream.ReceiveNext();
+            leftHandPosition = (Vector3)stream.ReceiveNext();
+            leftHandRotation = (Quaternion)stream.ReceiveNext();
+            rightHandPosition = (Vector3)stream.ReceiveNext();
+            rightHandRotation = (Quaternion)stream.ReceiveNext();
         }
     }
 }

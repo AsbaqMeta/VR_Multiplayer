@@ -193,7 +193,6 @@ MonoBehaviour:
   - {fileID: 4035218724868804573}
   - {fileID: 6168123339157884816}
   - {fileID: 8731068110651516272}
-  - {fileID: 0}
   - {fileID: 7374912912894810343}
   - {fileID: 3001967486135710039}
   sceneViewId: 0
@@ -216,6 +215,7 @@ MonoBehaviour:
   RightHand: {fileID: 5455388074357369706}
   LeftHandAnimator: {fileID: 8572023898371020783}
   RightHandAnimator: {fileID: 3313050789029082093}
+  smoothTime: 0.1
 --- !u!114 &2988114070383736416
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -9,6 +9,8 @@ public class TransformLerp : MonoBehaviourPun
     public float duration = 1.0f;
     public EventTimer eventTimer;
 
+    private bool isLerping = false;
+    
     private void RPCMoveToTarget()
     {
         if (PhotonNetwork.IsMasterClient)
@@ -21,40 +23,59 @@ public class TransformLerp : MonoBehaviourPun
     {
         if (PhotonNetwork.IsMasterClient)
         {
-            photonView.RPC("LerpToTarget", RpcTarget.All, target.position, target.rotation, target.localScale);
-            Debug.Log("MoveToTarget");
-            if (eventTimer != null)
-            {
-                eventTimer.StartTimer();
-            }
+            // If Master Client, directly call and sync
+            photonView.RPC("StartLerp", RpcTarget.All, target.position, target.rotation, target.localScale);
         }
-        
-       /* LerpToInitial(target.position, target.rotation, target.localScale);*/
+        else
+        {
+            // If not Master Client, request Master to execute the movement
+            photonView.RPC("RequestMoveToTarget", RpcTarget.MasterClient);
+        }
     }
 
     public void MoveToInitial()
     {
-        /*        if (PhotonNetwork.IsMasterClient)
-                    photonView.RPC("LerpToInitial", RpcTarget.All, initial.position, initial.rotation, initial.localScale);*/
-        Debug.Log("MoveToInitail");
-        LerpToInitial(initial.position, initial.rotation, initial.localScale);
-
+        if (PhotonNetwork.IsMasterClient)
+        {
+            photonView.RPC("StartLerp", RpcTarget.All, initial.position, initial.rotation, initial.localScale);
+        }
+        else
+        {
+            photonView.RPC("RequestMoveToInitial", RpcTarget.MasterClient);
+        }
     }
 
     [PunRPC]
-    private void LerpToTarget(Vector3 endPosition, Quaternion endRotation, Vector3 endScale)
+    private void RequestMoveToTarget()
     {
-        StartCoroutine(LerpTransformation(endPosition, endRotation, endScale, duration));
+        if (PhotonNetwork.IsMasterClient) // Ensure only Master executes
+        {
+            MoveToTarget();
+        }
     }
 
     [PunRPC]
-    private void LerpToInitial(Vector3 endPosition, Quaternion endRotation, Vector3 endScale)
+    private void RequestMoveToInitial()
     {
-        StartCoroutine(LerpTransformation(endPosition, endRotation, endScale, duration));
+        if (PhotonNetwork.IsMasterClient) // Ensure only Master executes
+        {
+            MoveToInitial();
+        }
+    }
+
+    [PunRPC]
+    private void StartLerp(Vector3 endPosition, Quaternion endRotation, Vector3 endScale)
+    {
+        if (!isLerping)
+        {
+            StartCoroutine(LerpTransformation(endPosition, endRotation, endScale, duration));
+        }
     }
 
     private IEnumerator LerpTransformation(Vector3 endPosition, Quaternion endRotation, Vector3 endScale, float time)
     {
+        isLerping = true;
+
         Vector3 startPosition = transform.position;
         Quaternion startRotation = transform.rotation;
         Vector3 startScale = transform.localScale;
@@ -73,6 +94,7 @@ public class TransformLerp : MonoBehaviourPun
         transform.position = endPosition;
         transform.rotation = endRotation;
         transform.localScale = endScale;
+        isLerping = false;
     }
 
 }
